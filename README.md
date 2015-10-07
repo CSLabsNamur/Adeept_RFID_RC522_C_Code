@@ -9,6 +9,6 @@
 
 4. sudo ./rfid_test
 
-5. >scan
+5.\>scan
 
    Press Enter
