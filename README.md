@@ -9,6 +9,6 @@
 
 4. sudo ./rfid_test
 
-5.\>scan
+5.RC522\>scan   (input "scan")
 
    Press Enter
