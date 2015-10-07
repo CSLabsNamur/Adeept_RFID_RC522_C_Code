@@ -1,9 +1,14 @@
 #Adeept RC522 RFID C Version Code
 
 ##Usage
-git clone https://github.com/adeept/Adeept_RFID_RC522_C_Code.git
-cd Adeept_RFID_RC522_C_Code/
-sudo ./compile.sh
-sudo ./rfid_test
->scan
-Press Enter
+1. git clone https://github.com/adeept/Adeept_RFID_RC522_C_Code.git
+
+2. cd Adeept_RFID_RC522_C_Code/
+
+3. sudo ./compile.sh
+
+4. sudo ./rfid_test
+
+5. >scan
+
+   Press Enter
