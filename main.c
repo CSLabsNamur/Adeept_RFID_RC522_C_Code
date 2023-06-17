@@ -4,6 +4,7 @@
 #include <string.h>
 #include <getopt.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include "mfrc522.h"
 #define DISP_COMMANDLINE()	printf("RC522>")
 
@@ -15,50 +16,75 @@ int main(int argc, char **argv) {
 	//Recognized card ID
 	uint8_t CardID[5] = { 0x00, };
 	static char command_buffer[1024];
+	bool autodump_mode = false;
 
-	ret = MFRC522_Init('A');
+    if (argc <= 1)
+    {
+        puts("Please specify device!");
+        exit(-1);
+    }
+    if ((argc > 2 && strcmp(argv[2], "autodump") == 0))
+    {
+        puts("Autodump mode enabled!");
+        autodump_mode = true;
+    }
+
+	ret = MFRC522_Init('A', argv[1]);
 	if (ret < 0) {
 		perror("Failed to initialize");
 		exit(-1);
 	}
-
 	printf("User Space RC522 Application\r\n");
 
-	while (1) {
-		/*Main Loop Start*/
-		DISP_COMMANDLINE();
+	if (!autodump_mode) {
+		while (1) {
+			/*Main Loop Start*/
+			DISP_COMMANDLINE();
 
-		scanf("%s", command_buffer);
-		if (strcmp(command_buffer, "scan") == 0) {
-			puts("Scanning");
-			while (1) {
-				ret = MFRC522_Check(CardID);
-				if (ret != MI_OK) {
-					printf(".");
-					fflush(stdout);
-					continue;
-				}
-				ret |= tag_select(CardID);
-				if (ret == MI_OK) {
-					ret = scan_loop(CardID);
-					if (ret < 0) {
-						goto END_SCAN;
-					} else if (ret == 1) {
-						goto HALT;
+			scanf("%s", command_buffer);
+			if (strcmp(command_buffer, "scan") == 0) {
+				puts("Scanning");
+				while (1) {
+					ret = MFRC522_Check(CardID);
+					if (ret != MI_OK) {
+						printf(".");
+						fflush(stdout);
+						continue;
+					}
+					ret |= tag_select(CardID);
+					if (ret == MI_OK) {
+						ret = scan_loop(CardID);
+						if (ret < 0) {
+							goto END_SCAN;
+						} else if (ret == 1) {
+							goto HALT;
+						}
 					}
 				}
+				END_SCAN: printf("Card error...");
+				HALT: puts("Halt");
+			} else if (strcmp(command_buffer, "quit") == 0
+					|| strcmp(command_buffer, "exit") == 0) {
+				return 0;
+			} else {
+				puts("Unknown command");
+				puts("scan:scan card and dump");
+				puts("quit:exit program");
 			}
-			END_SCAN: printf("Card error...");
-			HALT: puts("Halt");
-		} else if (strcmp(command_buffer, "quit") == 0
-				|| strcmp(command_buffer, "exit") == 0) {
-			return 0;
-		} else {
-			puts("Unknown command");
-			puts("scan:scan card and dump");
-			puts("quit:exit program");
+			/*Main Loop End*/
 		}
-		/*Main Loop End*/
+	} else {
+		while (true) {
+			ret = MFRC522_Check(CardID);
+			if (ret != MI_OK) {
+				continue;
+			}
+			ret |= tag_select(CardID);
+			if (ret == MI_OK) {
+				MFRC522_Debug_DumpSector(CardID, 0, false);
+			}
+			fflush(stdout);
+		}
 	}
 }
 
@@ -79,7 +105,7 @@ int scan_loop(uint8_t *CardID) {
 				return -1;
 		} else if (strcmp(input, "read") == 0) {
 			scanf("%d", &block_start);
-			if (MFRC522_Debug_DumpSector(CardID, block_start) < 0) {
+			if (MFRC522_Debug_DumpSector(CardID, block_start, true) < 0) {
 				return -1;
 			}
 		} else if (strcmp(input, "writestr") == 0) {
@@ -114,7 +140,7 @@ int tag_select(uint8_t *CardID) {
 	ret_int = MFRC522_SelectTag(CardID);
 	if (ret_int == 0) {
 		printf("Card Select Failed\r\n");
-		return -1;
+		return -1;                 
 	} else {
 		printf("Card Selected, Type:%s\r\n",
 				MFRC522_TypeToString(MFRC522_ParseType(ret_int)));

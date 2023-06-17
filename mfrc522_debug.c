@@ -3,45 +3,62 @@
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdbool.h>
 #include "mfrc522.h"
 #include "dump.h"
-int MFRC522_Debug_DumpSector(uint8_t *CardID, uint8_t block_addr) {
+int MFRC522_Debug_DumpSector(uint8_t *CardID, uint8_t block_addr, bool print) {
 	int ret, i;
 	uint8_t buffer[1024] = "";
-	uint8_t SectorKeyA[6] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
-	uint8_t *SectorKey;
-	SectorKey = SectorKeyA;
+	uint8_t SectorKey[6] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
-	printf(
-			"Auth Block (0x%02X) with key 0x%02X 0x%02X 0x%02X 0x%02X 0x%02X ...",
-			block_addr, SectorKey[0], SectorKey[1], SectorKey[2], SectorKey[3],
-			SectorKey[4]);
+	if (print) {
+		printf(
+				"Auth Block (0x%02X) with key 0x%02X 0x%02X 0x%02X 0x%02X 0x%02X ...",
+				block_addr, SectorKey[0], SectorKey[1], SectorKey[2], SectorKey[3],
+				SectorKey[4]);
+	}
 
 	ret = MFRC522_Auth((uint8_t) PICC_AUTHENT1A, (uint8_t) block_addr,
 			(uint8_t*) SectorKey, (uint8_t*) CardID);
 	if (ret == MI_OK) {
-		printf("OK\r\n");
+		if (print) {
+			printf("OK\r\n");
+		}
 
 		i = 0;
 		for (i = 0; i < (4 - block_addr % 4); i++) {
-			printf("Read block address 0x%02X ....", block_addr + i);
+			if (print) {
+				printf("Read block address 0x%02X ....", block_addr + i);
+			}
 			ret = MFRC522_Read(block_addr + i, buffer + i * 16);
 			if (ret <= 0) {
-				printf("Failed\r\n");
+				if (print) {
+					printf("Failed\r\n");
+				}
 				return -1;
 			} else {
-				printf("OK read %d bits\r\n", ret);
+				if (print) {
+					printf("OK read %d bits\r\n", ret);
+				}
 			}
 		}
-
-		dump(buffer, i * 16);
+		if (print) {
+			dump(buffer, i * 16);
+		} else {
+			printf("scan>");
+			for (int j = 0; j < 64; j += 1) {
+				printf("%02X", buffer[j]);
+			}
+			putchar('\n');
+		}
 		return 0;
 
 	} else {
-		printf("Failed\r\n");
+		if (print) {
+			printf("Failed\r\n");
+		}
 		return -1;
 	}
-
 }
 int MFRC522_Debug_Write(const char blockaddr, const char *Write_Data,
 		const int len) {
@@ -69,7 +86,7 @@ int MFRC522_Debug_CardDump(uint8_t *CardID) {
 	{
 		int i;
 		for (i = 0x0; i < 0x40; i += 4) {
-			ret_int |= MFRC522_Debug_DumpSector(CardID, i);
+			ret_int |= MFRC522_Debug_DumpSector(CardID, i, true);
 		}
 	}
 	return ret_int;

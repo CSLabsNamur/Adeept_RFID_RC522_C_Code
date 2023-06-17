@@ -19,7 +19,7 @@
 #include "mfrc522.h"
 #include <stdint.h>
 /* HAL prototypes*/
-void MFRC522_HAL_init(void);
+void MFRC522_HAL_init(char* spi_dev);
 void MFRC522_HAL_write(unsigned char addr, unsigned char val);
 unsigned char MFRC522_HAL_read(unsigned char addr);
 void MFRC522_HAL_Delay(unsigned int ms);
@@ -59,9 +59,9 @@ int MFRC522_Setup(char Type){
 	MFRC522_AntennaOn();		//Open the antenna
 	return 0;
 }
-int MFRC522_Init(char Type) {
+int MFRC522_Init(char Type, char* spi_dev) {
 
-	MFRC522_HAL_init();
+	MFRC522_HAL_init(spi_dev);
 
 	return MFRC522_Setup(Type);
 }
