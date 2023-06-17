@@ -1,4 +1,4 @@
 #!/bin/sh
 
-gcc *.c -o rfid_util
+gcc *.c -o rc522_util
 echo "completed!"
